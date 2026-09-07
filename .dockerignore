@@ -1,0 +1,14 @@
+.git
+.gitignore
+.dockerignore
+node_modules
+dist
+coverage
+test
+.env
+.env.*
+*.md
+npm-debug.log
+.prettierrc
+eslint.config.mjs
+compose.yaml
