@@ -11,7 +11,7 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/ttiziu/portfolio-api
-  DEPLOY_PATH: /home/jherry/servers/apps/portfolio-api
+  DEPLOY_PATH: /home/jherry/servers/apps/backend/portfolio-api
 
 jobs:
   build:
@@ -67,7 +67,7 @@ jobs:
           script: |
             set -e
             echo "$GHCR_TOKEN" | docker login ghcr.io -u ttiziu --password-stdin
-            cd /home/jherry/servers/apps/portfolio-api
+            cd /home/jherry/servers/apps/backend/portfolio-api
             docker compose pull
             docker compose up -d
             docker image prune -f
