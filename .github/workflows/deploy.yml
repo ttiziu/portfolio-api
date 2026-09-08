@@ -58,4 +58,30 @@ jobs:
           docker compose pull
           docker compose up -d
 
-          docker image prune -f
+          echo "Esperando healthcheck..."
+
+          for i in {1..18}; do
+            STATUS=$(docker inspect \
+              --format='{{.State.Health.Status}}' \
+              portfolio-api)
+
+            echo "Estado: $STATUS"
+
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Deploy correcto"
+              docker image prune -f
+              exit 0
+            fi
+
+            if [ "$STATUS" = "unhealthy" ]; then
+              echo "El backend quedó unhealthy"
+              docker logs portfolio-api --tail 100
+              exit 1
+            fi
+
+            sleep 5
+          done
+
+          echo "Timeout esperando que el backend esté healthy"
+          docker logs portfolio-api --tail 100
+          exit 1
