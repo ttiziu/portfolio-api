@@ -3,6 +3,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+
   workflow_dispatch:
 
 concurrency:
@@ -11,14 +12,15 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/ttiziu/portfolio-api
-  DEPLOY_PATH: /home/jherry/servers/apps/backend/portfolio-api
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -44,30 +46,16 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Deploy portfolio-api
+        run: |
+          set -e
 
-      - uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          source: compose.yaml
-          target: ${{ env.DEPLOY_PATH }}
+          cd /home/jherry/servers/apps/backend/portfolio-api
 
-      - uses: appleboy/ssh-action@v1.2.2
-        env:
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          envs: GHCR_TOKEN
-          script: |
-            set -e
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u ttiziu --password-stdin
-            cd /home/jherry/servers/apps/backend/portfolio-api
-            docker compose pull
-            docker compose up -d
-            docker image prune -f
+          docker compose pull
+          docker compose up -d
+
+          docker image prune -f
