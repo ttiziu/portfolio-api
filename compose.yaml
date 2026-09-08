@@ -1,10 +1,9 @@
 services:
   api:
-    build:
-      context: .
-      target: production
+    image: ghcr.io/ttiziu/portfolio-api:latest
     container_name: portfolio-api
     restart: unless-stopped
+    pull_policy: always
     env_file:
       - .env
     environment:
