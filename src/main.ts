@@ -18,7 +18,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: corsOrigins,
-    methods: ['GET'],
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type'],
     maxAge: 600,
   });
   app.useGlobalPipes(

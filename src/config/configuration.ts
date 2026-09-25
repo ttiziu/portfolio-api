@@ -13,4 +13,9 @@ export default () => ({
     botToken: process.env.DISCORD_BOT_TOKEN ?? '',
     userId: process.env.DISCORD_USER_ID ?? '',
   },
+  resend: {
+    apiKey: process.env.RESEND_API_KEY ?? '',
+    from: process.env.RESEND_FROM ?? 'Jherry <contact@jherry.me>',
+    to: process.env.RESEND_TO ?? 'contact@jherry.me',
+  },
 });
