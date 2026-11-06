@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import configuration from './config/configuration';
 import { validateEnv } from './config/validation';
 import { ContactModule } from './modules/contact/contact.module';
+import { GithubModule } from './modules/github/github.module';
 import { DiscordModule } from './modules/discord/discord.module';
 import { SpotifyModule } from './modules/spotify/spotify.module';
 
@@ -33,6 +34,7 @@ import { SpotifyModule } from './modules/spotify/spotify.module';
     }),
     SpotifyModule,
     DiscordModule,
+    GithubModule,
     ContactModule,
   ],
   controllers: [AppController],

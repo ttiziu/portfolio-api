@@ -39,6 +39,7 @@ type CacheEntry<T> = { value: T; expiresAt: number };
 @Injectable()
 export class SpotifyService {
   private token: TokenCache | null = null;
+  private tokenRequest: Promise<string | null> | null = null;
   private nowPlayingCache: CacheEntry<NowPlayingDto> | null = null;
   private recentCache: CacheEntry<{ tracks: RecentTrackDto[] }> | null = null;
   private topCache: CacheEntry<{ tracks: TopTrackDto[] }> | null = null;
@@ -208,6 +209,15 @@ export class SpotifyService {
       return this.token.accessToken;
     }
 
+    if (!this.tokenRequest) {
+      this.tokenRequest = this.requestAccessToken().finally(() => {
+        this.tokenRequest = null;
+      });
+    }
+    return this.tokenRequest;
+  }
+
+  private async requestAccessToken(): Promise<string | null> {
     const clientId = this.config.get<string>('spotify.clientId') ?? '';
     const clientSecret = this.config.get<string>('spotify.clientSecret') ?? '';
     const refreshToken = this.config.get<string>('spotify.refreshToken') ?? '';
