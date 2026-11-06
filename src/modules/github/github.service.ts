@@ -27,19 +27,34 @@ type Calendar = {
 @Injectable()
 export class GithubService {
   private readonly logger = new Logger(GithubService.name);
-  private cache: { value: Calendar; expiresAt: number } | null = null;
+  private readonly cache = new Map<
+    number,
+    { value: Calendar; expiresAt: number }
+  >();
+  private readonly pending = new Map<number, Promise<Calendar>>();
 
   constructor(private readonly config: ConfigService) {}
 
   async contributions(year = new Date().getFullYear()): Promise<Calendar> {
-    if (
-      this.cache &&
-      this.cache.value.year === year &&
-      this.cache.expiresAt > Date.now()
-    ) {
-      return this.cache.value;
-    }
+    const cached = this.cache.get(year);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+    const pending = this.pending.get(year);
+    if (pending) return pending;
 
+    const request = this.loadCalendar(year)
+      .then((value) => {
+        this.cache.set(year, {
+          value,
+          expiresAt: Date.now() + (value.days.length ? CACHE_MS : 30_000),
+        });
+        return value;
+      })
+      .finally(() => this.pending.delete(year));
+    this.pending.set(year, request);
+    return request;
+  }
+
+  private async loadCalendar(year: number): Promise<Calendar> {
     const token = this.config.get<string>('github.token') ?? '';
     const login = this.config.get<string>('github.login') ?? 'ttiziu';
     const empty: Calendar = { year, total: null, days: [] };
@@ -113,7 +128,10 @@ export class GithubService {
         (week.contributionDays ?? []).map((day) => ({
           date: day.date,
           count: day.contributionCount,
-          level: Math.max(0, LEVELS.indexOf(day.contributionLevel as (typeof LEVELS)[number])),
+          level: Math.max(
+            0,
+            LEVELS.indexOf(day.contributionLevel as (typeof LEVELS)[number]),
+          ),
         })),
       );
 
@@ -122,7 +140,6 @@ export class GithubService {
         total: calendar?.totalContributions ?? null,
         days,
       };
-      this.cache = { value, expiresAt: Date.now() + CACHE_MS };
       return value;
     } catch (error) {
       this.logger.error(
