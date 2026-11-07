@@ -13,6 +13,10 @@ export default () => ({
     botToken: process.env.DISCORD_BOT_TOKEN ?? '',
     userId: process.env.DISCORD_USER_ID ?? '',
   },
+  github: {
+    token: process.env.GITHUB_TOKEN ?? process.env.ACCESS_TOKEN ?? '',
+    login: process.env.GITHUB_LOGIN ?? 'ttiziu',
+  },
   resend: {
     apiKey: process.env.RESEND_API_KEY ?? '',
     from: process.env.RESEND_FROM ?? 'Jherry <contact@jherry.me>',

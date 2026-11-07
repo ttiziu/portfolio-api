@@ -1,3 +1,4 @@
+import type { Request } from 'express';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -7,6 +8,7 @@ import { AppService } from './app.service';
 import configuration from './config/configuration';
 import { validateEnv } from './config/validation';
 import { ContactModule } from './modules/contact/contact.module';
+import { GithubModule } from './modules/github/github.module';
 import { DiscordModule } from './modules/discord/discord.module';
 import { SpotifyModule } from './modules/spotify/spotify.module';
 
@@ -20,18 +22,19 @@ import { SpotifyModule } from './modules/spotify/spotify.module';
     }),
     ThrottlerModule.forRoot({
       throttlers: [{ name: 'default', ttl: 60_000, limit: 30 }],
-      getTracker: (req) => {
-        const cf = req.headers?.['cf-connecting-ip']
-        if (typeof cf === 'string' && cf.length > 0) return cf
-        const forwarded = req.headers?.['x-forwarded-for']
+      getTracker: (req: Partial<Pick<Request, 'headers' | 'ips' | 'ip'>>) => {
+        const cf = req.headers?.['cf-connecting-ip'];
+        if (typeof cf === 'string' && cf.length > 0) return cf;
+        const forwarded = req.headers?.['x-forwarded-for'];
         if (typeof forwarded === 'string' && forwarded.length > 0) {
-          return forwarded.split(',')[0].trim()
+          return forwarded.split(',')[0].trim();
         }
-        return req.ips?.[0] ?? req.ip ?? 'unknown'
+        return req.ips?.[0] ?? req.ip ?? 'unknown';
       },
     }),
     SpotifyModule,
     DiscordModule,
+    GithubModule,
     ContactModule,
   ],
   controllers: [AppController],

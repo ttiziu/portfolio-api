@@ -1,0 +1,81 @@
+# Falla el merge si el tipo, el lint, las pruebas, la build, la imagen o el audit no cierran.
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Tipos, lint, pruebas y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Unitarias
+        run: npm test
+      - name: E2E
+        run: npm run test:e2e
+      - name: Build de producción
+        run: npm run build
+
+  image:
+    name: Imagen de producción
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir la imagen
+        run: docker build -t portfolio-api:ci .
+
+  audit:
+    name: Dependencias vulnerables
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Sin vulnerabilidades altas ni críticas
+        run: npm audit --omit=dev --audit-level=high
+
+  listo:
+    name: Listo
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [check, image, audit]
+    steps:
+      - name: Exigir que todo lo anterior haya pasado
+        run: |
+          fail=0
+          for item in \
+            "Tipos, lint, pruebas y build=${{ needs.check.result }}" \
+            "Imagen de producción=${{ needs.image.result }}" \
+            "Dependencias vulnerables=${{ needs.audit.result }}"
+          do
+            echo "$item"
+            case "$item" in
+              *=success) ;;
+              *) fail=1 ;;
+            esac
+          done
+          exit "$fail"
