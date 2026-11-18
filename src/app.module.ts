@@ -12,6 +12,17 @@ import { GithubModule } from './modules/github/github.module';
 import { DiscordModule } from './modules/discord/discord.module';
 import { SpotifyModule } from './modules/spotify/spotify.module';
 
+// Cloudflare overwrites cf-connecting-ip, so it is safe while the origin is only
+// reachable through Cloudflare. Raw X-Forwarded-For is client-controlled and is
+// never read here; req.ip already resolves it via `trust proxy`.
+export function clientTracker(
+  req: Partial<Pick<Request, 'headers' | 'ip'>>,
+): string {
+  const cf = req.headers?.['cf-connecting-ip'];
+  if (typeof cf === 'string' && cf.length > 0) return cf;
+  return req.ip ?? 'unknown';
+}
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -22,15 +33,7 @@ import { SpotifyModule } from './modules/spotify/spotify.module';
     }),
     ThrottlerModule.forRoot({
       throttlers: [{ name: 'default', ttl: 60_000, limit: 30 }],
-      getTracker: (req: Partial<Pick<Request, 'headers' | 'ips' | 'ip'>>) => {
-        const cf = req.headers?.['cf-connecting-ip'];
-        if (typeof cf === 'string' && cf.length > 0) return cf;
-        const forwarded = req.headers?.['x-forwarded-for'];
-        if (typeof forwarded === 'string' && forwarded.length > 0) {
-          return forwarded.split(',')[0].trim();
-        }
-        return req.ips?.[0] ?? req.ip ?? 'unknown';
-      },
+      getTracker: clientTracker,
     }),
     SpotifyModule,
     DiscordModule,
