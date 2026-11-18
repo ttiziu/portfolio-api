@@ -23,7 +23,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return response.status(status).json({
         statusCode: status,
         path: request.url,
-        error: typeof body === 'string' ? body : body,
+        error: body,
       });
     }
 
